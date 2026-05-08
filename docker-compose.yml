@@ -1,0 +1,108 @@
+
+x-app-common: &app-common
+  build:
+    context: .
+    dockerfile: Dockerfile
+    target: runtime
+  env_file: .env
+  depends_on:
+    mongodb:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  restart: unless-stopped
+  networks:
+    - tayog-net
+
+services:
+
+  api:
+    <<: *app-common
+    container_name: tayog-api
+    ports:
+      - "8000:8000"
+    command: >
+      uvicorn app.main:app
+      --host 0.0.0.0
+      --port 8000
+      --workers 4
+      --access-log
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  worker:
+    <<: *app-common
+    command: >
+      celery -A app.tasks.celery_app.celery_app worker
+      --loglevel=info
+      --concurrency=4
+      --queues=default,celery,scrape
+    healthcheck:
+      test: ["CMD", "celery", "-A", "app.tasks.celery_app.celery_app", "inspect", "ping"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+  beat:
+    <<: *app-common
+    container_name: tayog-beat
+    command: >
+      celery -A app.tasks.celery_app.celery_app beat
+      --loglevel=info
+
+  flower:
+    <<: *app-common
+    container_name: tayog-flower
+    command: >
+      celery -A app.tasks.celery_app.celery_app flower
+      --port=5555
+    ports:
+      - "5555:5555"
+
+  mongodb:
+    image: mongo:7.0
+    container_name: tayog-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: tayog
+      MONGO_INITDB_ROOT_PASSWORD: tayog_secret
+      MONGO_INITDB_DATABASE: tayog_scraper
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tayog-net
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: tayog-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tayog-net
+
+volumes:
+  mongo-data:
+  redis-data:
+
+networks:
+  tayog-net:
+    driver: bridge

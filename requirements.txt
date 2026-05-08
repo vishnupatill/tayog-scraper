@@ -1,0 +1,33 @@
+# ── Web Framework ─────────────────────────────────────────────────────────────
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+pydantic==2.7.1
+pydantic-settings==2.3.0
+
+# ── Database ──────────────────────────────────────────────────────────────────
+motor==3.4.0               # async MongoDB driver
+pymongo==4.7.2
+
+# ── Task Queue ────────────────────────────────────────────────────────────────
+celery[redis]==5.4.0
+redis==5.0.4
+flower==2.0.1              # Celery monitoring UI
+
+# ── HTTP / Scraping ───────────────────────────────────────────────────────────
+httpx==0.27.0
+beautifulsoup4==4.12.3
+lxml==5.2.2
+playwright==1.44.0         # for JS-heavy sites
+scrapy==2.11.2             # for large-scale crawling
+
+# ── Resilience ────────────────────────────────────────────────────────────────
+tenacity==8.3.0            # retry logic
+
+# ── Observability ─────────────────────────────────────────────────────────────
+prometheus-fastapi-instrumentator==7.0.0
+sentry-sdk[fastapi]==2.4.0
+
+# ── Dev / Testing ─────────────────────────────────────────────────────────────
+pytest==8.2.2
+pytest-asyncio==0.23.7
+httpx==0.27.0
