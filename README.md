@@ -150,29 +150,27 @@ This starts:
 | MongoDB    | mongodb://localhost:27017        | Primary database         |
 | Redis      | redis://localhost:6379           | Task broker              |
 
-### 3. Trigger your first scrape
+### 3. Automated Scraping
+
+After the stack starts successfully, Celery Beat automatically schedules scraping jobs based on the configured schedule.
+
+Default schedule:
+- Every 6 hours
+- Sources: LinkedIn, Naukri
+- Keywords: software engineer, data engineer
+- Location: Hyderabad
+  Monitor scheduled execution:
+  curl -X POST http://localhost:8000/api/v1/scrape \
+   -H "Content-Type: application/json" \
+   -d '{
+     "sources": ["linkedin", "naukri"],
+     "keywords": ["software engineer"],
+     "location": "Hyderabad",
+     "max_pages": 3
+  }'
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/scrape \
-  -H "Content-Type: application/json" \
-  -d '{
-    "sources": ["linkedin", "naukri"],
-    "keywords": ["software engineer", "data engineer"],
-    "location": "Hyderabad",
-    "max_pages": 3
-  }'
-```
-
-Response:
-```json
-{
-  "success": true,
-  "job_id": "f3a2c1d0-...",
-  "status": "pending",
-  "message": "Scraping job enqueued. Poll /api/v1/scrape/{job_id} for status.",
-  "estimated_duration_seconds": 54
-}
-```
+docker compose logs -f beat
 
 ### 4. Poll for status
 
